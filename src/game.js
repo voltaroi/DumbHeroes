@@ -58,7 +58,33 @@ export class Game {
             gameName.innerHTML = `<h1>Welcome, ${pseudo}!</h1>`;
         });
 
+        this.initPlayer(this.name);
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
     }
+
+    initPlayer(name) {
+        this.socket.on("RC_Login", ({ pseudo }) => {
+        const player = new Player(this.socket.id, pseudo);
+        console.log('Player initialized:', player);
+        return player;
+        });
+    }
+    
 }
+
+
+class Player {
+    constructor(id, pseudo){
+        this.id = id;
+        this.pseudo = pseudo;
+        this.position = { top: 0, left: 0 };
+        this.movement = { up: false, down: false, left: false, right: false };
+        this.health = 100;
+        this.mana = 100;
+        this.size = { width: 5, height: 5};
+        this.heroes = "";
+        this.isDashing = false;
+        this.dashCooldown = 0;
+    }
+};
