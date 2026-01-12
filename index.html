@@ -28,10 +28,29 @@
             background-color: #222;
             width: 100%;
         }
+        #loginScreen {
+            position: absolute;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        #nameInput, #loginButton {
+            padding: 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
+           <div id="loginScreen">
+                <input type="text" id="nameInput" placeholder="Enter your name" />
+                <button id="loginButton">Login</button>
+        </div>
         <canvas id="gameCanvas"></canvas>
     <script type="module" src="./src/client.js"></script>
     </div>
