@@ -1,5 +1,5 @@
 export function createSocket(serverHost) {
-    let socket = io("http://127.0.0.1:2001");
+    let socket = io("http://90.107.81.168:2001");
     return socket;
 }
 
