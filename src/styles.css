@@ -36,9 +36,9 @@ body {
             padding: 10px;
             font-size: 16px;
         }
-        #gameScreen {
+        #gameName {
             position: absolute;
-            z-index: 10;
+            z-index: 1;
             color: white;
             font-size: 24px;
         }
