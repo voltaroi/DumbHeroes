@@ -16,6 +16,9 @@ app.use(express.static(__dirname));
 //Pour que le serveur ce connecte a un autre serveur
 // const clientio = require('socket.io-client');
 // let server = clientio("http://90.107.81.168:2000");
+// server.listen(2001, () => {
+//     console.log('Server running on http://127.0.0.1:2001');
+// });
 
 app.get('/', function(req,res){
     const options = {
@@ -23,10 +26,6 @@ app.get('/', function(req,res){
     }
     var fileName = 'index.html';
     res.sendFile(fileName,options);
-});
-
-server.listen(2001, () => {
-    console.log('Server running on http://127.0.0.1:2001');
 });
 
 let map = [
