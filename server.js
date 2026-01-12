@@ -5,7 +5,7 @@ const path = require('path');
 
 const io = require('socket.io')(2001, { // Port utiliser pour se serveur
     cors: {
-        origin: "http://90.107.81.168", // Ip du serveur
+        origin: "http://127.0.0.1", // Ip du serveur
         methods: ["GET", "POST"],
     }
 });
@@ -43,13 +43,16 @@ class Player {
         this.pseudo = pseudo;
         this.position = { top: 0, left: 0 };
         this.movement = { up: false, down: false, left: false, right: false };
+        this.health = 100;
+        this.mana = 100;
+        this.size = { width: 5, height: 5};
     }
 };
 
 let playerList = {};
 
 setTimeout(() => {
-    playerList.forEach(player => {
+    Object.values(playerList).forEach(player => {
         switch(true){
             case player.movement.up:
                 player.position.top -= 5;
@@ -75,7 +78,7 @@ io.on('connection',function(socket){
 
     socket.on('RS_Login', function(data){
         canLogin = true;
-        playerList.forEach(player => {
+        Object.values(playerList).forEach(player => {
             if(player.pseudo === data.pseudo){
                 canLogin = false;
             }
