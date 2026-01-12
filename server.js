@@ -6,7 +6,7 @@ const path = require('path');
 
 const io = require('socket.io')(2001, { // Port utiliser pour se serveur
     cors: {
-        origin: "http://127.0.0.1", // Ip du serveur
+        origin: "*",
         methods: ["GET", "POST"],
     }
 });

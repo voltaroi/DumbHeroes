@@ -1,14 +1,5 @@
 export function createSocket(serverHost) {
-    let socket;
-    try {
-        if (window.location && window.location.hostname) {
-            socket = io();
-        } else {
-            socket = io("http://127.0.0.1:2001");
-        }
-    } catch (e) {
-        socket = io("http://127.0.0.1:2001");
-    }
+    let socket = io("http://127.0.0.1:2001");
     return socket;
 }
 
