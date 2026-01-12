@@ -45,7 +45,7 @@ class Player {
     constructor(id, pseudo){
         this.id = id;
         this.pseudo = pseudo;
-        this.position = { top: 0, left: 0 };
+        this.position = { top: 200, left: 200 };
         this.movement = { up: false, down: false, left: false, right: false };
         this.health = 100;
         this.mana = 100;
@@ -110,6 +110,7 @@ setTimeout(() => {
             player.dashCooldown -= 50;
         }
     });
+    
     io.emit('RC_UpdatePositions', playerList);
 }, 50);
 

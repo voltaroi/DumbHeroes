@@ -2,6 +2,7 @@ export class Game {
     constructor() {
         this.canvas = null;
         this.socket = null;
+        this.movement = { up: false, down: false, left: false, right: false };
     }
 
     init() {
@@ -55,10 +56,13 @@ export class Game {
             }
 
             gameScreen.style.display = 'block';
-            gameName.innerHTML = `<h1>Welcome, ${pseudo}!</h1>`;
+            
+            this.setupKeyboardControls();
+            this.movePlayer();
         });
 
         this.initPlayer(this.name);
+        this.movePlayer();
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
     }
@@ -68,6 +72,43 @@ export class Game {
         const player = new Player(this.socket.id, pseudo);
         console.log('Player initialized:', player);
         return player;
+        });
+    }
+
+    setupKeyboardControls() {
+        document.addEventListener('keydown', (e) => {
+            console.log('Key pressed:', e.code, e.key);
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') this.movement.up = true;
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') this.movement.down = true;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.movement.left = true;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') this.movement.right = true;
+            console.log('Movement:', this.movement);
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') this.movement.up = false;
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') this.movement.down = false;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') this.movement.left = false;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') this.movement.right = false;
+        });
+    }
+
+    movePlayer() {
+        setInterval(() => {
+            this.socket.emit("RS_Move", this.movement);
+        }, 1000 / 60);
+
+        this.socket.on("RC_UpdatePositions", (players) => {
+            const ctx = this.canvas.getContext('2d');
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            Object.values(players).forEach((player, index) => {
+                console.log('Drawing player at:', player.position);
+                const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+                ctx.fillStyle = colors[index % colors.length];
+                const size = 20; 
+                ctx.fillRect(player.position.left, player.position.top, size, size);
+            });
         });
     }
     
