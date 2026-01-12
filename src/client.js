@@ -1,1 +1,6 @@
-let socket = io("http://90.107.81.168:2001");
+import { initNetwork } from "./network";
+import { Game } from "./game";
+
+const game = new Game();
+
+initNetwork(game);
