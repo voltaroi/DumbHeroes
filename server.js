@@ -24,14 +24,49 @@ app.get('/', function(req,res){
 
 });
 
+let map = [
+    [1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,1,0,0,0,0,1],
+    [1,1,1,0,1,0,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,1],
+    [1,0,1,1,0,0,0,0,1,1],
+    [1,0,0,1,0,0,1,0,1,1],
+    [1,0,0,1,0,0,1,0,0,1],
+    [1,1,0,1,1,0,1,0,0,1],
+    [1,1,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1],
+];
+
 class Player {
     constructor(id, pseudo){
         this.id = id;
         this.pseudo = pseudo;
+        this.position = { top: 0, left: 0 };
+        this.movement = { up: false, down: false, left: false, right: false };
     }
 };
 
 let playerList = {};
+
+setTimeout(() => {
+    playerList.forEach(player => {
+        switch(true){
+            case player.movement.up:
+                player.position.top -= 5;
+                break;
+            case player.movement.down:
+                player.position.top += 5;
+                break;
+            case player.movement.left:
+                player.position.left -= 5;
+                break;
+            case player.movement.right:
+                player.position.left += 5;
+                break;
+        }
+    });
+    io.emit('RC_UpdatePositions', playerList);
+}, 50);
 
 io.on('connection',function(socket){
     console.log('A user connected');
@@ -63,7 +98,14 @@ io.on('connection',function(socket){
     });
 
     socket.on('RS_Move', function(data){
-        console.log('Player move: ' + data.direction);
+        playerList.forEach(player => {
+            if(player.id !== socket.id){
+                player.movement.up += data.up;
+                player.movement.down += data.down;
+                player.movement.left += data.left;
+                player.movement.right += data.right;
+            }
+        });
     });
 });
 
