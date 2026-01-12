@@ -24,21 +24,46 @@ app.get('/', function(req,res){
 
 });
 
+class Player {
+    constructor(id, pseudo){
+        this.id = id;
+        this.pseudo = pseudo;
+    }
+};
+
+let playerList = {};
+
 io.on('connection',function(socket){
     console.log('A user connected');
     console.log(socket.id);
     console.log(socket.handshake.address);
 
-    //Exemple d'une requête que le serveur peut recevoir
-    socket.on('RS_CreateAccount', function(data){
+    socket.on('RS_Login', function(data){
+        canLogin = true;
+        playerList.forEach(player => {
+            if(player.pseudo === data.pseudo){
+                canLogin = false;
+            }
+        });
 
-        //Exemple d'une requête que le serveur va envoier au client
-        socket.emit('RC_AccountCreationError', { message: 'Pseudo already taken' });
+        if(canLogin){
+            let newPlayer = new Player(socket.id, data.pseudo);
+            playerList[socket.id] = newPlayer;
+            socket.emit('RC_Login', { id: socket.id, pseudo: data.pseudo });
+            console.log('Player logged in: ' + data.pseudo);
+        } else {
+            socket.emit('RC_LoginError', { message: 'Pseudo already taken' });
+            console.log('Login error: Pseudo already taken - ' + data.pseudo);
+        }
     });
 
-    //Exemple pour se login (sans aucune vérification)
-    socket.on('RS_Login', function(data){
-        socket.emit('RC_Login', {});
+    socket.on('disconnect', function(){
+        console.log('A user disconnected');
+        delete playerList[socket.id];
+    });
+
+    socket.on('RS_Move', function(data){
+        console.log('Player move: ' + data.direction);
     });
 });
 
