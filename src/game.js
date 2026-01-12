@@ -1,3 +1,5 @@
-export class Game{
-    
+export class Game {
+    constructor(canvas) {
+        this.canvas = canvas;
+    }
 }

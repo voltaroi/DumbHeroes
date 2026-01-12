@@ -25,6 +25,7 @@ export function initNetwork(game) {
     socket.on("RC_LoginSuccess", data => {
         game.onLoginSuccess && game.onLoginSuccess(data);
     });
+    socket.emit("RS_Login", { pseudo: data.pseudo });
 
     return socket;
 }
