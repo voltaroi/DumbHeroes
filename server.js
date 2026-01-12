@@ -80,7 +80,7 @@ function isColliding(x, y, size) {
 
 let playerList = {};
 
-setTimeout(() => {
+setInterval(() => {
     Object.values(playerList).forEach(player => {
         let newX = player.position.left;
         let newY = player.position.top;
@@ -158,7 +158,7 @@ io.on('connection',function(socket){
     });
 
     socket.on('RS_Move', function(data){
-        playerList.forEach(player => {
+        Object.values(playerList).forEach(player => {
             if(player.id !== socket.id){
                 player.movement.up += data.up;
                 player.movement.down += data.down;
