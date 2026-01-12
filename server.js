@@ -1,27 +1,34 @@
-const app = require('express')();
+const express = require('express');
+const app = express();
 
 const fs = require('fs');
 const path = require('path');
 
-const io = require('socket.io')(2001, { // Port utiliser pour se serveur
+const http = require('http');
+const server = http.createServer(app);
+const io = require('socket.io')(server, {
     cors: {
-        origin: "http://127.0.0.1", // Ip du serveur
+        origin: "*",
         methods: ["GET", "POST"],
     }
 });
+
+app.use(express.static(__dirname));
 
 //Pour que le serveur ce connecte a un autre serveur
 // const clientio = require('socket.io-client');
 // let server = clientio("http://90.107.81.168:2000");
 
 app.get('/', function(req,res){
-
     const options = {
         root: path.join(__dirname)
     }
     var fileName = 'index.html';
     res.sendFile(fileName,options);
+});
 
+server.listen(2001, () => {
+    console.log('Server running on http://127.0.0.1:2001');
 });
 
 let map = [
