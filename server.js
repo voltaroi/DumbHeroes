@@ -40,7 +40,7 @@ class Player {
         this.pseudo = pseudo;
 
         this.position = { left: 288, top: 288 };
-        this.size = { width: 28, height: 28 };
+        this.size = { width: 16, height: 16 };
 
         this.movement = { up: false, down: false, left: false, right: false };
 
