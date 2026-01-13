@@ -5,10 +5,11 @@ export class Game {
         this.movement = { up: false, down: false, left: false, right: false };
         this.map = null;
         this.cellSize = 128;
-        this.camera = { x: 0, y: 0 }; 
-        this.cameraTarget = { x: 0, y: 0 }; 
-        this.cameraSmooth = 0.1;
+        this.camera = { x: 0, y: 0 };
         this.localPlayerId = null;
+        this.playersPositions = {}; 
+        this.smoothFactor = 0.15; 
+        this.players = {}; 
     }
 
     init() {
@@ -109,34 +110,56 @@ export class Game {
         }, 1000 / 60);
 
         this.socket.on("RC_UpdatePositions", (players) => {
+            this.players = players;
+            Object.keys(players).forEach(playerId => {
+                const targetPos = players[playerId].position;
+                
+                if (!this.playersPositions[playerId]) {
+                    this.playersPositions[playerId] = { left: targetPos.left, top: targetPos.top };
+                }
+            });
+        });
+        const render = () => {
+            if (!this.players || Object.keys(this.players).length === 0) {
+                requestAnimationFrame(render);
+                return;
+            }
+            Object.keys(this.players).forEach(playerId => {
+                const targetPos = this.players[playerId].position;
+                
+                if (this.playersPositions[playerId]) {
+                    this.playersPositions[playerId].left += (targetPos.left - this.playersPositions[playerId].left) * this.smoothFactor;
+                    this.playersPositions[playerId].top += (targetPos.top - this.playersPositions[playerId].top) * this.smoothFactor;
+                }
+            });
+            if (this.localPlayerId && this.playersPositions[this.localPlayerId]) {
+                this.camera.x = this.playersPositions[this.localPlayerId].left - this.canvas.width / 2;
+                this.camera.y = this.playersPositions[this.localPlayerId].top - this.canvas.height / 2;
+            }
+            
             const ctx = this.canvas.getContext('2d');
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             
-            const localPlayer = players[this.localPlayerId];
-            if (localPlayer) {
-                this.cameraTarget.x = localPlayer.position.left - this.canvas.width / 2;
-                this.cameraTarget.y = localPlayer.position.top - this.canvas.height / 2;
-                
-                this.camera.x += (this.cameraTarget.x - this.camera.x) * this.cameraSmooth;
-                this.camera.y += (this.cameraTarget.y - this.camera.y) * this.cameraSmooth;
-            }
-            
             this.drawMap();
             
-            Object.values(players).forEach((player, index) => {
-                console.log('Drawing player at:', player.position);
+            Object.values(this.players).forEach((player, index) => {
+                const smoothPos = this.playersPositions[player.id] || player.position;
                 
                 const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
                 ctx.fillStyle = colors[index % colors.length];
                 const size = 20;
                 ctx.fillRect(
-                    player.position.left - this.camera.x,
-                    player.position.top - this.camera.y,
+                    smoothPos.left - this.camera.x,
+                    smoothPos.top - this.camera.y,
                     size,
                     size
                 );
             });
-        });
+            
+            requestAnimationFrame(render);
+        };
+        
+        render();
     }
 
     drawMap() {
