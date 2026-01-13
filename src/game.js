@@ -5,6 +5,8 @@ export class Game {
         this.movement = { up: false, down: false, left: false, right: false };
         this.map = null;
         this.cellSize = 128;
+        this.camera = { x: 0, y: 0 }; 
+        this.localPlayerId = null;
     }
 
     init() {
@@ -47,6 +49,7 @@ export class Game {
             document.getElementById('loginScreen').style.display = 'none';
             this.map = map;
             this.cellSize = cellSize;
+            this.localPlayerId = this.socket.id;
 
             let gameScreen = document.getElementById('gameScreen');
             if (!gameScreen) {
@@ -107,6 +110,12 @@ export class Game {
             const ctx = this.canvas.getContext('2d');
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             
+            const localPlayer = players[this.localPlayerId];
+            if (localPlayer) {
+                this.camera.x = localPlayer.position.left - this.canvas.width / 2;
+                this.camera.y = localPlayer.position.top - this.canvas.height / 2;
+            }
+            
             this.drawMap();
             
             Object.values(players).forEach((player, index) => {
@@ -114,8 +123,13 @@ export class Game {
                 
                 const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
                 ctx.fillStyle = colors[index % colors.length];
-                const size = 20; 
-                ctx.fillRect(player.position.left, player.position.top, size, size);
+                const size = 20;
+                ctx.fillRect(
+                    player.position.left - this.camera.x,
+                    player.position.top - this.camera.y,
+                    size,
+                    size
+                );
             });
         });
     }
@@ -128,8 +142,13 @@ export class Game {
         for (let row = 0; row < this.map.length; row++) {
             for (let col = 0; col < this.map[row].length; col++) {
                 if (this.map[row][col] === 1) {
-                    ctx.fillStyle = '#8B4513'; // Couleur marron
-                    ctx.fillRect(col * this.cellSize, row * this.cellSize, this.cellSize, this.cellSize);
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(
+                        col * this.cellSize - this.camera.x,
+                        row * this.cellSize - this.camera.y,
+                        this.cellSize,
+                        this.cellSize
+                    );
                 }
             }
         }
