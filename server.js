@@ -1,10 +1,8 @@
 const express = require('express');
 const app = express();
-
-const fs = require('fs');
 const path = require('path');
 
-const io = require('socket.io')(2001, { // Port utiliser pour se serveur
+const io = require('socket.io')(2001, {
     cors: {
         origin: "*",
         methods: ["GET", "POST"],
@@ -13,22 +11,15 @@ const io = require('socket.io')(2001, { // Port utiliser pour se serveur
 
 app.use(express.static(__dirname));
 
-//Pour que le serveur ce connecte a un autre serveur
-// const clientio = require('socket.io-client');
-// let server = clientio("http://90.107.81.168:2000");
-// server.listen(2001, () => {
-//     console.log('Server running on http://127.0.0.1:2001');
-// });
-
-app.get('/', function(req,res){
-    const options = {
-        root: path.join(__dirname)
-    }
-    var fileName = 'index.html';
-    res.sendFile(fileName,options);
+app.get('/', (req, res) => {
+    res.sendFile('index.html', { root: __dirname });
 });
 
-let map = [
+/* ================= MAP ================= */
+
+const CELL_SIZE = 96;
+
+const map = [
     [1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,1,0,0,0,0,1],
     [1,1,1,0,1,0,1,1,0,1],
@@ -41,153 +32,149 @@ let map = [
     [1,1,1,1,1,1,1,1,1,1],
 ];
 
+/* ================= PLAYER ================= */
+
 class Player {
-    constructor(id, pseudo){
+    constructor(id, pseudo) {
         this.id = id;
         this.pseudo = pseudo;
-        this.position = { top: 200, left: 200 };
+
+        this.position = { left: 288, top: 288 };
+        this.size = { width: 28, height: 28 };
+
         this.movement = { up: false, down: false, left: false, right: false };
+
         this.health = 100;
         this.mana = 100;
-        this.size = { width: 5, height: 5};
-        this.heroes = "";
+
+        this.hero = "";
         this.isDashing = false;
         this.dashCooldown = 0;
     }
-};
+}
+
+/* ================= COLLISION ================= */
 
 function isColliding(x, y, size) {
-    const cellSize = 32;
-    const gridX = Math.floor(x / cellSize);
-    const gridY = Math.floor(y / cellSize);
-    const gridW = Math.floor((x + size.width) / cellSize);
-    const gridH = Math.floor((y + size.height) / cellSize);
-    
-    if (gridX < 0 || gridY < 0 || gridW >= map[0].length || gridH >= map.length) {
-        return true;
-    }
-    
-    for (let row = gridY; row <= gridH; row++) {
-        for (let col = gridX; col <= gridW; col++) {
-            if (map[row] && map[row][col] === 1) {
-                return true;
-            }
+    const left = Math.floor(x / CELL_SIZE);
+    const right = Math.floor((x + size.width - 1) / CELL_SIZE);
+    const top = Math.floor(y / CELL_SIZE);
+    const bottom = Math.floor((y + size.height - 1) / CELL_SIZE);
+
+    if (
+        left < 0 || right >= map[0].length ||
+        top < 0 || bottom >= map.length
+    ) return true;
+
+    for (let row = top; row <= bottom; row++) {
+        for (let col = left; col <= right; col++) {
+            if (map[row][col] === 1) return true;
         }
     }
-    
+
     return false;
 }
 
-let playerList = {};
+/* ================= GAME LOOP ================= */
+
+const playerList = {};
 
 setInterval(() => {
     Object.values(playerList).forEach(player => {
+        let speed = player.isDashing ? 25 : 5;
+
         let newX = player.position.left;
         let newY = player.position.top;
-        let speed = player.isDashing ? 25 : 5;
-        
-        switch(true){
-            case player.movement.up:
-                newY -= speed;
-                break;
-            case player.movement.down:
-                newY += speed;
-                break;
-            case player.movement.left:
-                newX -= speed;
-                break;
-            case player.movement.right:
-                newX += speed;
-                break;
-        }
-        
-        if (!isColliding(newX, newY, player.size)) {
+
+        if (player.movement.left) newX -= speed;
+        if (player.movement.right) newX += speed;
+        if (player.movement.up) newY -= speed;
+        if (player.movement.down) newY += speed;
+
+        // collision séparée X / Y
+        if (!isColliding(newX, player.position.top, player.size)) {
             player.position.left = newX;
+        }
+
+        if (!isColliding(player.position.left, newY, player.size)) {
             player.position.top = newY;
         }
-        
+
         if (player.dashCooldown > 0) {
             player.dashCooldown -= 50;
         }
     });
-    
+
     io.emit('RC_UpdatePositions', playerList);
 }, 50);
 
-io.on('connection',function(socket){
-    console.log('A user connected');
-    console.log(socket.id);
-    console.log(socket.handshake.address);
+/* ================= SOCKET ================= */
 
-    socket.on('RS_Login', function(data){
-        canLogin = true;
-        Object.values(playerList).forEach(player => {
-            if(player.pseudo === data.pseudo){
-                canLogin = false;
-            }
+io.on('connection', socket => {
+    console.log('User connected:', socket.id);
+
+    socket.on('RS_Login', data => {
+        let canLogin = true;
+
+        Object.values(playerList).forEach(p => {
+            if (p.pseudo === data.pseudo) canLogin = false;
         });
 
-        if(canLogin){
-            let newPlayer = new Player(socket.id, data.pseudo);
-            let rand = Math.random();
-            switch(true){
-                case rand < 0.25:
-                    newPlayer.hero = "Teophile"
-                    break;
-                case rand < 0.5:
-                    newPlayer.hero = "Albert"
-                    break;
-                case rand < 0.75:
-                    newPlayer.hero = "Didier"
-                    break;
-                default:
-                    newPlayer.hero = "Norbert"
-                    break;
-            }
-            playerList[socket.id] = newPlayer;
-            socket.emit('RC_Login', { id: socket.id, pseudo: data.pseudo });
-            console.log('Player logged in: ' + data.pseudo);
-        } else {
+        if (!canLogin) {
             socket.emit('RC_LoginError', { message: 'Pseudo already taken' });
-            console.log('Login error: Pseudo already taken - ' + data.pseudo);
+            return;
         }
+
+        const player = new Player(socket.id, data.pseudo);
+
+        const rand = Math.random();
+        if (rand < 0.25) player.hero = "Teophile";
+        else if (rand < 0.5) player.hero = "Albert";
+        else if (rand < 0.75) player.hero = "Didier";
+        else player.hero = "Norbert";
+
+        playerList[socket.id] = player;
+
+        socket.emit('RC_Login', {
+            id: socket.id,
+            pseudo: player.pseudo,
+            hero: player.hero,
+            map: map,
+            cellSize: CELL_SIZE
+        });
+
+        console.log('Player logged in:', player.pseudo);
     });
 
-    socket.on('disconnect', function(){
-        console.log('A user disconnected');
-        delete playerList[socket.id];
-    });
-
-    socket.on('RS_Move', function(data){
+    socket.on('RS_Move', data => {
         if (playerList[socket.id]) {
             playerList[socket.id].movement = data;
-            console.log('Player moving:', socket.id, data);
         }
     });
 
-    socket.on('RS_Attack', function(){
-        
-    });
-
-    socket.on('RS_Dash', function(){
+    socket.on('RS_Dash', () => {
         const player = playerList[socket.id];
-        if (player && player.dashCooldown <= 0 && (player.movement.up || player.movement.down || player.movement.left || player.movement.right)) {
+        if (!player) return;
+
+        if (
+            player.dashCooldown <= 0 &&
+            (player.movement.up || player.movement.down || player.movement.left || player.movement.right)
+        ) {
             player.isDashing = true;
             player.dashCooldown = 2000;
-            
+
             setTimeout(() => {
                 if (playerList[socket.id]) {
                     playerList[socket.id].isDashing = false;
                 }
             }, 300);
-            
-            console.log('Player dashing: ' + player.pseudo);
         }
+    });
+
+    socket.on('disconnect', () => {
+        delete playerList[socket.id];
+        console.log('User disconnected:', socket.id);
     });
 });
 
-// Exemple d'un message reçus venant d'un autre serveur
-// server.on('RC_GetNumPlayer', function(data){ });
-
-// Exemple d'une boucle créer coté serveur pour par exemple actualisé la position des joueurs
-// setTimeout(AutoSave, 1000/30); //se fait 30 fois par seconde
+console.log('Server running on port 2001');

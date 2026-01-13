@@ -3,6 +3,8 @@ export class Game {
         this.canvas = null;
         this.socket = null;
         this.movement = { up: false, down: false, left: false, right: false };
+        this.map = null;
+        this.cellSize = 128;
     }
 
     init() {
@@ -41,8 +43,10 @@ export class Game {
             this.socket.emit("RS_Login", { pseudo: name });
         });
 
-        this.socket.on("RC_Login", ({ pseudo }) => {
+        this.socket.on("RC_Login", ({ pseudo, map, cellSize }) => {
             document.getElementById('loginScreen').style.display = 'none';
+            this.map = map;
+            this.cellSize = cellSize;
 
             let gameScreen = document.getElementById('gameScreen');
             if (!gameScreen) {
@@ -59,6 +63,7 @@ export class Game {
             
             this.setupKeyboardControls();
             this.movePlayer();
+            this.drawMap();
         });
 
         this.initPlayer(this.name);
@@ -102,6 +107,8 @@ export class Game {
             const ctx = this.canvas.getContext('2d');
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             
+            this.drawMap();
+            
             Object.values(players).forEach((player, index) => {
                 console.log('Drawing player at:', player.position);
                 
@@ -111,6 +118,21 @@ export class Game {
                 ctx.fillRect(player.position.left, player.position.top, size, size);
             });
         });
+    }
+
+    drawMap() {
+        if (!this.map || !this.canvas) return;
+        
+        const ctx = this.canvas.getContext('2d');
+        
+        for (let row = 0; row < this.map.length; row++) {
+            for (let col = 0; col < this.map[row].length; col++) {
+                if (this.map[row][col] === 1) {
+                    ctx.fillStyle = '#8B4513'; // Couleur marron
+                    ctx.fillRect(col * this.cellSize, row * this.cellSize, this.cellSize, this.cellSize);
+                }
+            }
+        }
     }
     
 }
