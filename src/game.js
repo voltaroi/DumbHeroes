@@ -6,6 +6,8 @@ export class Game {
         this.map = null;
         this.cellSize = 128;
         this.camera = { x: 0, y: 0 }; 
+        this.cameraTarget = { x: 0, y: 0 }; 
+        this.cameraSmooth = 0.1;
         this.localPlayerId = null;
     }
 
@@ -112,8 +114,11 @@ export class Game {
             
             const localPlayer = players[this.localPlayerId];
             if (localPlayer) {
-                this.camera.x = localPlayer.position.left - this.canvas.width / 2;
-                this.camera.y = localPlayer.position.top - this.canvas.height / 2;
+                this.cameraTarget.x = localPlayer.position.left - this.canvas.width / 2;
+                this.cameraTarget.y = localPlayer.position.top - this.canvas.height / 2;
+                
+                this.camera.x += (this.cameraTarget.x - this.camera.x) * this.cameraSmooth;
+                this.camera.y += (this.cameraTarget.y - this.camera.y) * this.cameraSmooth;
             }
             
             this.drawMap();
