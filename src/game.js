@@ -104,6 +104,7 @@ export class Game {
             
             Object.values(players).forEach((player, index) => {
                 console.log('Drawing player at:', player.position);
+                
                 const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
                 ctx.fillStyle = colors[index % colors.length];
                 const size = 20; 

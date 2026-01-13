@@ -159,14 +159,10 @@ io.on('connection',function(socket){
     });
 
     socket.on('RS_Move', function(data){
-        Object.values(playerList).forEach(player => {
-            if(player.id !== socket.id){
-                player.movement.up += data.up;
-                player.movement.down += data.down;
-                player.movement.left += data.left;
-                player.movement.right += data.right;
-            }
-        });
+        if (playerList[socket.id]) {
+            playerList[socket.id].movement = data;
+            console.log('Player moving:', socket.id, data);
+        }
     });
 
     socket.on('RS_Attack', function(){
