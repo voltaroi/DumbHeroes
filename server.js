@@ -17,6 +17,8 @@ app.get('/', (req, res) => {
 
 /* ================= MAP ================= */
 
+let mapSelected;
+
 const CELL_SIZE = 96;
 
 const map = [
@@ -54,6 +56,41 @@ const map = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
 ];
 
+const map2 = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,0,1],
+    [1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,1],
+    [1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0,1,1,1,0,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,1],
+    [1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,0,1],
+    [1,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1],
+    [1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,0,1,1,0,1],
+    [1,0,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,1],
+    [1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+init();
+
+function init() {
+    let rand = Math.random();
+    if (rand < 0.5) {
+        mapSelected = map;
+    } else {
+        mapSelected = map2;
+    }
+}
+
 /* ================= PLAYER ================= */
 
 class Player {
@@ -84,13 +121,13 @@ function isColliding(x, y, size) {
     const bottom = Math.floor((y + size.height - 1) / CELL_SIZE);
 
     if (
-        left < 0 || right >= map[0].length ||
-        top < 0 || bottom >= map.length
+        left < 0 || right >= mapSelected[0].length ||
+        top < 0 || bottom >= mapSelected.length
     ) return true;
 
     for (let row = top; row <= bottom; row++) {
         for (let col = left; col <= right; col++) {
-            if (map[row][col] === 1) return true;
+            if (mapSelected[row][col] === 1) return true;
         }
     }
 
@@ -102,7 +139,13 @@ function isColliding(x, y, size) {
 const playerList = {};
 
 setInterval(() => {
+    let numPlayers = Object.keys(playerList).length;
+    let numPlayerDead = 0;
     Object.values(playerList).forEach(player => {
+        if(player.life <= 0){
+             numPlayerDead += 1;
+            return;
+        }
         let speed = player.isDashing ? 25 : 5;
 
         let newX = player.position.left;
@@ -125,6 +168,19 @@ setInterval(() => {
             player.dashCooldown -= 50;
         }
     });
+
+    if(numPlayers - 1 === numPlayerDead && numPlayers > 1){
+        console.log("Resetting game...");
+        Object.values(playerList).forEach(player => {
+            player.position = { left: 288, top: 288 };
+            player.health = 100;
+            player.mana = 100;
+            player.isDashing = false;
+            player.dashCooldown = 0;
+        });
+
+        init();
+    }
 
     io.emit('RC_UpdatePositions', playerList);
 }, 50);
@@ -160,7 +216,7 @@ io.on('connection', socket => {
             id: socket.id,
             pseudo: player.pseudo,
             hero: player.hero,
-            map: map,
+            map: mapSelected,
             cellSize: CELL_SIZE
         });
 
